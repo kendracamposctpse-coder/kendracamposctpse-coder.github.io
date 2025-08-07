@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Detector de Producto Makara</title>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+  <style>
+    body { text-align:center; font-family:sans-serif; }
+    video { width:300px; height:300px; }
+   body {
+      font-family: 'DynaPuff', cursive;
+      margin: 0;
+      padding: 0;
+      background-color: #fdfdf9;
+      color:#0074aa;
+    }
+  </style>
+</head>
+<body>
+  <h2>Escaneá tu símbolo</h2>
+  <video id="webcam" autoplay playsinline></video>
+  <p id="label">Esperando...</p>
+
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/iEBgAMXCZ/";
+    const redirectMap = {
+      "Bolso Cangrejo": "https://makaraeco.github.io/index.html",
+      "Aretes Tortuga": "https://makara.com/aretes-tortuga",
+      "Totebag": "https://makara.com/totebag",
+      "Laptop": "https://makara.com/laptop",
+      "Cartuchera": "https://makara.com/cartuchera"
+    };
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+      const model = await tmImage.load(modelURL, metadataURL);
+      const webcam = new tmImage.Webcam(300, 300, true);
+      await webcam.setup();
+      await webcam.play();
+      document.getElementById("webcam").appendChild(webcam.canvas);
+
+      const labelContainer = document.getElementById("label");
+
+      async function loop() {
+        webcam.update();
+        const prediction = await model.predict(webcam.canvas);
+        const highest = prediction.reduce((prev,curr) => curr.probability > prev.probability ? curr : prev);
+        labelContainer.innerText = `${highest.className}: ${(highest.probability*100).toFixed(1)}%`;
+
+        if (highest.probability > 0.90 && redirectMap[highest.className]) {
+          window.location.href = redirectMap[highest.className];
+          return;
+        }
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    }
+    init();
+  </script>
+</body>
+</html>
